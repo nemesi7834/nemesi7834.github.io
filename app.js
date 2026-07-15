@@ -1,5 +1,6 @@
 const config = window.PRODUCT_DAY_CONFIG;
 const dashboard = document.querySelector("#dashboard");
+const keyHealthGrid = document.querySelector("#key-health-grid");
 const engagementFooter = document.querySelector("#engagement-footer");
 const attentionSummary = document.querySelector("#attention-summary");
 const template = document.querySelector("#metric-card-template");
@@ -18,6 +19,7 @@ let requestPoller;
 const alertRules = {
   "Outdated fulfilments rate": ["higher", .2, .35, .5], "Funnel time: new → delivered": ["higher", .15, .3, 8], "Rejected fulfilments": ["higher", .2, .35, .3], "Stock-related cancellations": ["higher", .2, .35, .15], "Ops support tickets / active user": ["higher", .2, .35, .005], "Customer support tickets / active seller": ["higher", .2, .35, .03], "Funnel conversion: new → delivered": ["lower", .1, .2, 3], "VP bookings adoption": ["lower", .1, .2, 5], "Approved POs without changes": ["lower", .1, .2, 3], "FBO on-time stock availability": ["lower", .15, .3, 3], "GFR on-time stock availability": ["lower", .15, .3, 3], "Seller promo coverage": ["lower", .1, .2, 2], "SKU promo coverage": ["lower", .1, .2, 2], "VP monthly active users": ["lower", .1, .2, 100], "Seller adoption rate": ["lower", .1, .2, 3], "Average GMV per active seller": ["lower", .1, .2, .3], "GFR supplier adoption rate": ["lower", .1, .2, 3]
 };
+const keyMetricNames = new Set(["Funnel time: new → delivered", "Outdated fulfilments rate", "SKU promo coverage"]);
 
 document.querySelector("#login-form").addEventListener("submit", signIn);
 document.querySelector("#sign-out-button").addEventListener("click", signOut);
@@ -46,7 +48,7 @@ function signOut() {
   session = null;
   clearInterval(requestPoller);
   localStorage.removeItem(sessionKey);
-  dashboard.replaceChildren(); engagementFooter.querySelectorAll(".section").forEach((node) => node.remove()); attentionSummary.replaceChildren();
+  dashboard.replaceChildren(); keyHealthGrid.replaceChildren(); engagementFooter.querySelectorAll(".section").forEach((node) => node.remove()); attentionSummary.replaceChildren();
   showLogin();
 }
 
@@ -119,16 +121,24 @@ function formatElapsed(start) {
 }
 
 function renderDashboard(data, createdAt) {
-  dashboard.replaceChildren(); engagementFooter.querySelectorAll(".section").forEach((node) => node.remove());
+  dashboard.replaceChildren(); keyHealthGrid.replaceChildren(); engagementFooter.querySelectorAll(".section").forEach((node) => node.remove());
   document.querySelector("#snapshot-date").textContent = `Updated: ${new Date(createdAt).toLocaleString("en-GB")}`;
   const analyses = data.sections.flatMap((section) => section.metrics.map(analyseMetric));
+  const metrics = data.sections.flatMap((section) => section.metrics);
   renderAttentionSummary(analyses);
+  metrics.filter((metric) => keyMetricNames.has(metric.name)).forEach((metric) => {
+    const card = createMetricCard(metric, analyses.find((analysis) => analysis.metric === metric));
+    card.classList.add("metric-card--key");
+    keyHealthGrid.append(card);
+  });
   data.sections.forEach((section) => {
     const destination = section.placement === "footer" ? engagementFooter : dashboard;
+    const supportingMetrics = section.metrics.filter((metric) => !keyMetricNames.has(metric.name));
+    if (!supportingMetrics.length) return;
     const sectionElement = document.createElement("section"); sectionElement.className = "section";
     sectionElement.innerHTML = `<h2 class="section__title">${section.title}</h2><p class="section__description">${section.description}</p>`;
     const grid = document.createElement("div"); grid.className = "card-grid";
-    section.metrics.forEach((metric) => grid.append(createMetricCard(metric, analyses.find((analysis) => analysis.metric === metric))));
+    supportingMetrics.forEach((metric) => grid.append(createMetricCard(metric, analyses.find((analysis) => analysis.metric === metric))));
     sectionElement.append(grid); destination.append(sectionElement);
   });
 }
