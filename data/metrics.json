@@ -3,6 +3,7 @@
   "sections": [
     {
       "title": "Engagement & support",
+      "placement": "footer",
       "description": "Product adoption and support signals from the latest confirmed monthly snapshot.",
       "metrics": [
         {"name":"VP monthly active users","target":"Upward trend","trend":{"kind":"up","label":"up"},"history":[{"label":"Feb","value":"1,450","numeric":1450},{"label":"Mar","value":"1,530","numeric":1530},{"label":"Apr","value":"1,626","numeric":1626},{"label":"May","value":"1,848","numeric":1848},{"label":"Jun","value":"1,983","numeric":1983},{"label":"Jul (14)","value":"Waiting for data transfer","status":"pending"}]},
@@ -44,4 +45,3 @@
     }
   ]
 }
-

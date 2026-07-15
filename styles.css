@@ -31,6 +31,9 @@ h1 { margin: 0; color: var(--navy); font-size: clamp(2.2rem, 5vw, 4.3rem); lette
 
 .notice { display: flex; gap: 10px; align-items: flex-start; margin: 36px 0 42px; border: 1px solid #f1d39d; border-radius: 14px; background: #fff8e9; color: #664d1f; padding: 14px 16px; }
 .notice p { margin: 0; line-height: 1.5; }
+.engagement-footer { margin-top: 64px; border-top: 1px solid var(--line); padding-top: 2px; }
+.engagement-footer .section { margin-top: 32px; }
+.engagement-footer .notice { margin-top: 36px; }
 
 .section { margin-top: 52px; }
 .section__title { margin: 0 0 5px; color: var(--navy); font-size: 1.45rem; letter-spacing: -.025em; }
@@ -58,4 +61,3 @@ h1 { margin: 0; color: var(--navy); font-size: clamp(2.2rem, 5vw, 4.3rem); lette
   .page-shell { width: min(100% - 24px, 1200px); padding-top: 42px; }
   .metric-card { min-height: 238px; }
 }
-

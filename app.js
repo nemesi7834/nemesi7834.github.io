@@ -1,4 +1,5 @@
 const dashboard = document.querySelector("#dashboard");
+const engagementFooter = document.querySelector("#engagement-footer");
 const template = document.querySelector("#metric-card-template");
 
 fetch("./data/metrics.json")
@@ -14,6 +15,7 @@ fetch("./data/metrics.json")
 function renderDashboard(data) {
   document.querySelector("#snapshot-date").textContent = `Source snapshot: ${data.snapshotDate}`;
   data.sections.forEach((section) => {
+    const destination = section.placement === "footer" ? engagementFooter : dashboard;
     const sectionElement = document.createElement("section");
     sectionElement.className = "section";
     sectionElement.innerHTML = `<h2 class="section__title">${section.title}</h2><p class="section__description">${section.description}</p>`;
@@ -21,7 +23,7 @@ function renderDashboard(data) {
     grid.className = "card-grid";
     section.metrics.forEach((metric) => grid.append(createMetricCard(metric)));
     sectionElement.append(grid);
-    dashboard.append(sectionElement);
+    destination.append(sectionElement);
   });
 }
 
@@ -71,4 +73,3 @@ function drawSparkline(points, trend) {
   svg.innerHTML = `<path d="M0 ${height - 3} H${width}" stroke="#e5eaed" stroke-width="1"/><polyline points="${coordinates.join(" ")}" fill="none" stroke="${color}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/>`;
   return svg;
 }
-
