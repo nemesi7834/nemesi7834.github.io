@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Public SX Operations product metrics dashboard." />
+    <title>Product Day — SX Operations</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="hero">
+        <p class="eyebrow">Product Day</p>
+        <h1>SX Operations metrics</h1>
+        <p class="intro">A public snapshot of product health across support, fulfilment, bookings, stock availability and promotions.</p>
+        <div class="meta-row" aria-label="Dashboard metadata">
+          <span id="snapshot-date" class="meta-pill">Loading snapshot…</span>
+          <span class="meta-pill">Static baseline</span>
+        </div>
+      </header>
+
+      <section class="notice" aria-label="Data availability note">
+        <span aria-hidden="true">ℹ</span>
+        <p>Some July engagement metrics are marked <strong>Waiting for data transfer</strong>. Their latest confirmed historical values remain visible.</p>
+      </section>
+
+      <div id="dashboard" class="dashboard" aria-live="polite"></div>
+    </main>
+
+    <template id="metric-card-template">
+      <article class="metric-card">
+        <div class="metric-card__header">
+          <h3></h3>
+          <span class="trend-badge"></span>
+        </div>
+        <p class="metric-value"></p>
+        <p class="metric-period"></p>
+        <div class="sparkline" aria-hidden="true"></div>
+        <p class="metric-target"></p>
+        <details class="history">
+          <summary>View history</summary>
+          <ul></ul>
+        </details>
+      </article>
+    </template>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>
+
