@@ -23,21 +23,15 @@
 
       <div id="app-content" hidden>
       <header class="topbar">
-        <div class="topbar__brand">
-          <span>Product Day</span>
-          <span class="topbar__divider" aria-hidden="true">/</span>
-          <h1>SX Operations</h1>
-        </div>
+        <h1>SX Operations</h1>
         <div class="topbar__controls">
-          <div class="meta-row" aria-label="Dashboard metadata">
-            <span id="snapshot-date" class="meta-pill">Loading snapshot…</span>
-            <span id="refresh-state" class="meta-status">Protected snapshot</span>
-          </div>
+          <span id="snapshot-date" class="meta-pill">Loading snapshot…</span>
           <div class="dashboard-actions">
             <button id="update-button" type="button">Update</button>
             <button id="sign-out-button" class="button-secondary" type="button">Sign out</button>
           </div>
         </div>
+        <span id="refresh-state" class="visually-hidden">Protected snapshot</span>
         <section id="refresh-progress" class="refresh-progress" aria-live="polite" hidden>
           <div class="refresh-progress__topline">
             <strong id="refresh-progress-title">Preparing update</strong>

@@ -43,13 +43,13 @@ button:hover { background: #0b3041; } button:disabled { cursor: wait; opacity: .
 .refresh-progress[data-status="failed"] .refresh-progress__track span { background: var(--red); }
 .refresh-progress__topline + .refresh-progress__track + p { margin: 9px 0 0; color: var(--muted); font-size: .82rem; line-height: 1.45; }
 
-.topbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; min-height: 58px; border-bottom: 1px solid var(--line); padding-bottom: 14px; }
-.topbar__brand { display: flex; align-items: center; gap: 10px; color: var(--teal); font-size: .83rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; }
-.topbar__brand h1 { margin: 0; color: var(--navy); font-size: 1rem; font-weight: 750; letter-spacing: -.015em; text-transform: none; }
-.topbar__divider { color: #aab5bc; font-weight: 500; }
-.topbar__controls, .meta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.topbar { display: flex; align-items: center; gap: 14px; min-height: 48px; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+.topbar h1 { margin: 0; color: var(--navy); font-size: 1.05rem; font-weight: 750; letter-spacing: -.02em; white-space: nowrap; }
+.topbar__controls { display: flex; align-items: center; gap: 12px; }
 .meta-pill { color: var(--muted); font-size: .76rem; font-weight: 650; white-space: nowrap; }
-.meta-status { color: var(--muted); font-size: .76rem; font-weight: 650; white-space: nowrap; }
+.dashboard-actions { display: contents; }
+.dashboard-actions #sign-out-button { margin-left: auto; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; clip-path: inset(50%); }
 
 .notice { display: flex; gap: 10px; align-items: flex-start; margin: 36px 0 42px; border: 1px solid #f1d39d; border-radius: 14px; background: #fff8e9; color: #664d1f; padding: 14px 16px; }
 .notice p { margin: 0; line-height: 1.5; }
@@ -110,9 +110,9 @@ button:hover { background: #0b3041; } button:disabled { cursor: wait; opacity: .
 
 @media (max-width: 600px) {
   .page-shell { width: min(100% - 24px, 1200px); padding-top: 42px; }
-  .topbar { align-items: flex-start; }
-  .topbar__controls { align-items: flex-start; flex-direction: column; gap: 10px; }
-  .topbar__brand { font-size: .74rem; }
+  .topbar { align-items: flex-start; flex-wrap: wrap; }
+  .topbar__controls { flex: 1 1 auto; flex-wrap: wrap; justify-content: flex-end; }
+  .meta-pill { display: none; }
   .key-health__header { align-items: flex-start; flex-direction: column; gap: 6px; }
   .key-health__grid { grid-template-columns: 1fr; }
   .metric-card { min-height: 238px; }
