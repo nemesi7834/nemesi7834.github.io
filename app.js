@@ -17,9 +17,10 @@ let session = loadSession();
 let requestPoller;
 
 const alertRules = {
-  "Outdated fulfilments rate": ["higher", .2, .35, .5], "Funnel time: new → delivered": ["higher", .15, .3, 8], "Rejected fulfilments": ["higher", .2, .35, .3], "Stock-related cancellations": ["higher", .2, .35, .15], "Ops support tickets / active user": ["higher", .2, .35, .005], "Customer support tickets / active seller": ["higher", .2, .35, .03], "Funnel conversion: new → delivered": ["lower", .1, .2, 3], "VP bookings adoption": ["lower", .1, .2, 5], "Approved POs without changes": ["lower", .1, .2, 3], "FBO on-time stock availability": ["lower", .15, .3, 3], "GFR on-time stock availability": ["lower", .15, .3, 3], "Seller promo coverage": ["lower", .1, .2, 2], "SKU promo coverage": ["lower", .1, .2, 2], "VP monthly active users": ["lower", .1, .2, 100], "Seller adoption rate": ["lower", .1, .2, 3], "Average GMV per active seller": ["lower", .1, .2, .3], "GFR supplier adoption rate": ["lower", .1, .2, 3]
+  "Outdated fulfilments rate": ["higher", .2, .35, .5], "Funnel time: new → delivered": ["higher", .15, .3, 8], "Rejected fulfilments": ["higher", .2, .35, .3], "Stock-related cancellations": ["higher", .2, .35, .15], "Ops support tickets / active user": ["higher", .2, .35, .005], "Customer support tickets / active seller": ["higher", .2, .35, .03], "Funnel conversion: new → delivered": ["lower", .1, .2, 3], "VP bookings adoption": ["lower", .1, .2, 5], "Approved POs without changes": ["lower", .1, .2, 3], "FBO on-time stock availability": ["lower", .15, .3, 3], "GFR on-time stock availability": ["lower", .15, .3, 3], "Seller promo coverage": ["lower", .1, .2, 2], "SKU promo coverage": ["lower", .1, .2, 2], "VP monthly active users": ["lower", .1, .2, 100], "Seller adoption rate": ["lower", .1, .2, 3], "Average GMV per active seller": ["lower", .1, .2, .3]
 };
 const keyMetricNames = new Set(["Funnel time: new → delivered", "Outdated fulfilments rate", "SKU promo coverage"]);
+const hiddenMetricNames = new Set(["GFR supplier adoption rate"]);
 
 document.querySelector("#login-form").addEventListener("submit", signIn);
 document.querySelector("#sign-out-button").addEventListener("click", signOut);
@@ -123,8 +124,8 @@ function formatElapsed(start) {
 function renderDashboard(data, createdAt) {
   dashboard.replaceChildren(); keyHealthGrid.replaceChildren(); engagementFooter.querySelectorAll(".section").forEach((node) => node.remove());
   document.querySelector("#snapshot-date").textContent = `Updated: ${new Date(createdAt).toLocaleString("en-GB")}`;
-  const analyses = data.sections.flatMap((section) => section.metrics.map(analyseMetric));
-  const metrics = data.sections.flatMap((section) => section.metrics);
+  const metrics = data.sections.flatMap((section) => section.metrics).filter((metric) => !hiddenMetricNames.has(metric.name));
+  const analyses = metrics.map(analyseMetric);
   renderAttentionSummary(analyses);
   metrics.filter((metric) => keyMetricNames.has(metric.name)).forEach((metric) => {
     const card = createMetricCard(metric, analyses.find((analysis) => analysis.metric === metric));
@@ -133,11 +134,11 @@ function renderDashboard(data, createdAt) {
   });
   data.sections.forEach((section) => {
     const destination = section.placement === "footer" ? engagementFooter : dashboard;
-    const supportingMetrics = section.metrics.filter((metric) => !keyMetricNames.has(metric.name));
+    const supportingMetrics = section.metrics.filter((metric) => !keyMetricNames.has(metric.name) && !hiddenMetricNames.has(metric.name));
     if (!supportingMetrics.length) return;
     const sectionElement = document.createElement("section"); sectionElement.className = "section";
     sectionElement.innerHTML = `<h2 class="section__title">${section.title}</h2><p class="section__description">${section.description}</p>`;
-    const grid = document.createElement("div"); grid.className = "card-grid";
+    const grid = document.createElement("div"); grid.className = `card-grid${section.title === "Promotions" ? " card-grid--compact" : ""}`;
     supportingMetrics.forEach((metric) => grid.append(createMetricCard(metric, analyses.find((analysis) => analysis.metric === metric))));
     sectionElement.append(grid); destination.append(sectionElement);
   });
@@ -151,7 +152,7 @@ function createMetricCard(metric, analysis) {
   fragment.querySelector("h3").textContent = metric.name;
   const trend = fragment.querySelector(".trend-badge"); trend.textContent = metric.trend.label; trend.dataset.trend = metric.trend.kind;
   const value = fragment.querySelector(".metric-value"); value.textContent = latest.value; value.classList.toggle("is-pending", latest.status === "pending");
-  fragment.querySelector(".metric-period").textContent = latest.label; fragment.querySelector(".metric-target").textContent = metric.target ? `Target: ${metric.target}` : "";
+  fragment.querySelector(".metric-period").textContent = latest.label;
   const numeric = metric.history.filter((point) => Number.isFinite(point.numeric)); if (numeric.length > 1) fragment.querySelector(".sparkline").append(drawSparkline(numeric, metric.trend.kind));
   metric.history.slice().reverse().forEach((point) => { const item = document.createElement("li"); item.textContent = `${point.label}: ${point.value}`; fragment.querySelector(".history ul").append(item); });
   return card;
@@ -184,4 +185,15 @@ function loadSession() { try { return JSON.parse(localStorage.getItem(sessionKey
 function median(values) { const sorted = values.slice().sort((a, b) => a - b); return sorted[Math.floor(sorted.length / 2)]; }
 function metricId(name) { return `metric-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}`; }
 function capitalize(value) { return `${value[0].toUpperCase()}${value.slice(1)}`; }
-function drawSparkline(points, trend) { const width = 220, height = 42, values = points.map((p) => p.numeric), min = Math.min(...values), max = Math.max(...values), range = max - min || 1, color = trend === "watch" ? "#bb3d3d" : trend === "down" ? "#b76b00" : "#0a8378"; const line = values.map((v, i) => `${(i / (values.length - 1) * width).toFixed(1)},${(height - 4 - (v - min) / range * (height - 10)).toFixed(1)}`).join(" "); const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg"); svg.setAttribute("viewBox", `0 0 ${width} ${height}`); svg.innerHTML = `<path d="M0 ${height - 3} H${width}" stroke="#e5eaed"/><polyline points="${line}" fill="none" stroke="${color}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/>`; return svg; }
+function drawSparkline(points, trend) {
+  const width = 220, height = 68, plotBottom = 38, values = points.map((p) => p.numeric), min = Math.min(...values), max = Math.max(...values), range = max - min || 1, color = trend === "watch" ? "#bb3d3d" : trend === "down" ? "#b76b00" : "#0a8378";
+  const coordinates = values.map((value, index) => ({ x: index / (values.length - 1) * width, y: plotBottom - (value - min) / range * 30 }));
+  const line = coordinates.map(({ x, y }) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+  const labels = [...new Set([0, Math.round((points.length - 1) / 2), points.length - 1])].map((index) => {
+    const { x, y } = coordinates[index]; const anchor = index === 0 ? "start" : index === points.length - 1 ? "end" : "middle";
+    return `<g><circle cx="${x}" cy="${y}" r="2.6" fill="${color}"/><text x="${x}" y="${Math.max(10, y - 7)}" text-anchor="${anchor}" class="spark-value">${formatSparkValue(points[index].numeric)}</text><text x="${x}" y="61" text-anchor="${anchor}" class="spark-period">${compactPeriod(points[index].label)}</text></g>`;
+  }).join("");
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg"); svg.setAttribute("viewBox", `0 0 ${width} ${height}`); svg.innerHTML = `<path d="M0 ${plotBottom} H${width}" stroke="#e5eaed"/><polyline points="${line}" fill="none" stroke="${color}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/>${labels}`; return svg;
+}
+function formatSparkValue(value) { return Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/, ""); }
+function compactPeriod(label) { if (label.length <= 10) return label; const months = label.match(/[A-Z][a-z]{2}/g); return months?.length ? `${months[0]}–${months.at(-1)}` : `${label.slice(0, 9)}…`; }
