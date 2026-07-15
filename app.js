@@ -1,156 +1,141 @@
+const config = window.PRODUCT_DAY_CONFIG;
 const dashboard = document.querySelector("#dashboard");
 const engagementFooter = document.querySelector("#engagement-footer");
 const attentionSummary = document.querySelector("#attention-summary");
 const template = document.querySelector("#metric-card-template");
+const loginScreen = document.querySelector("#login-screen");
+const appContent = document.querySelector("#app-content");
+const refreshState = document.querySelector("#refresh-state");
+const sessionKey = "product-day-session";
+let session = loadSession();
+let requestPoller;
 
 const alertRules = {
-  "Outdated fulfilments rate": { direction: "higher", warning: 0.2, critical: 0.35, minimum: 0.5 },
-  "Funnel time: new → delivered": { direction: "higher", warning: 0.15, critical: 0.3, minimum: 8 },
-  "Rejected fulfilments": { direction: "higher", warning: 0.2, critical: 0.35, minimum: 0.3 },
-  "Stock-related cancellations": { direction: "higher", warning: 0.2, critical: 0.35, minimum: 0.15 },
-  "Ops support tickets / active user": { direction: "higher", warning: 0.2, critical: 0.35, minimum: 0.005 },
-  "Customer support tickets / active seller": { direction: "higher", warning: 0.2, critical: 0.35, minimum: 0.03 },
-  "Funnel conversion: new → delivered": { direction: "lower", warning: 0.1, critical: 0.2, minimum: 3 },
-  "VP bookings adoption": { direction: "lower", warning: 0.1, critical: 0.2, minimum: 5 },
-  "Approved POs without changes": { direction: "lower", warning: 0.1, critical: 0.2, minimum: 3 },
-  "FBO on-time stock availability": { direction: "lower", warning: 0.15, critical: 0.3, minimum: 3 },
-  "GFR on-time stock availability": { direction: "lower", warning: 0.15, critical: 0.3, minimum: 3 },
-  "Seller promo coverage": { direction: "lower", warning: 0.1, critical: 0.2, minimum: 2 },
-  "SKU promo coverage": { direction: "lower", warning: 0.1, critical: 0.2, minimum: 2 },
-  "VP monthly active users": { direction: "lower", warning: 0.1, critical: 0.2, minimum: 100 },
-  "Seller adoption rate": { direction: "lower", warning: 0.1, critical: 0.2, minimum: 3 },
-  "Average GMV per active seller": { direction: "lower", warning: 0.1, critical: 0.2, minimum: 0.3 },
-  "GFR supplier adoption rate": { direction: "lower", warning: 0.1, critical: 0.2, minimum: 3 }
+  "Outdated fulfilments rate": ["higher", .2, .35, .5], "Funnel time: new → delivered": ["higher", .15, .3, 8], "Rejected fulfilments": ["higher", .2, .35, .3], "Stock-related cancellations": ["higher", .2, .35, .15], "Ops support tickets / active user": ["higher", .2, .35, .005], "Customer support tickets / active seller": ["higher", .2, .35, .03], "Funnel conversion: new → delivered": ["lower", .1, .2, 3], "VP bookings adoption": ["lower", .1, .2, 5], "Approved POs without changes": ["lower", .1, .2, 3], "FBO on-time stock availability": ["lower", .15, .3, 3], "GFR on-time stock availability": ["lower", .15, .3, 3], "Seller promo coverage": ["lower", .1, .2, 2], "SKU promo coverage": ["lower", .1, .2, 2], "VP monthly active users": ["lower", .1, .2, 100], "Seller adoption rate": ["lower", .1, .2, 3], "Average GMV per active seller": ["lower", .1, .2, .3], "GFR supplier adoption rate": ["lower", .1, .2, 3]
 };
 
-fetch("./data/metrics.json")
-  .then((response) => {
-    if (!response.ok) throw new Error("Could not load metrics snapshot.");
-    return response.json();
-  })
-  .then(renderDashboard)
-  .catch(() => {
-    dashboard.innerHTML = '<p class="section__description">The dashboard snapshot is temporarily unavailable.</p>';
-  });
+document.querySelector("#login-form").addEventListener("submit", signIn);
+document.querySelector("#sign-out-button").addEventListener("click", signOut);
+document.querySelector("#update-button").addEventListener("click", requestUpdate);
+boot();
 
-function renderDashboard(data) {
-  document.querySelector("#snapshot-date").textContent = `Source snapshot: ${data.snapshotDate}`;
+async function boot() {
+  if (!session) return showLogin();
+  try { await loadDashboard(); showDashboard(); } catch { signOut(); }
+}
+
+async function signIn(event) {
+  event.preventDefault();
+  const message = document.querySelector("#login-error");
+  message.textContent = "";
+  try {
+    const response = await authRequest("/auth/v1/token?grant_type=password", { email: config.loginEmail, password: document.querySelector("#password").value });
+    session = { ...response, expires_at: Date.now() + response.expires_in * 1000 };
+    localStorage.setItem(sessionKey, JSON.stringify(session));
+    await loadDashboard();
+    showDashboard();
+  } catch { message.textContent = "The password was not accepted."; }
+}
+
+function signOut() {
+  session = null;
+  clearInterval(requestPoller);
+  localStorage.removeItem(sessionKey);
+  dashboard.replaceChildren(); engagementFooter.querySelectorAll(".section").forEach((node) => node.remove()); attentionSummary.replaceChildren();
+  showLogin();
+}
+
+function showLogin() { loginScreen.hidden = false; appContent.hidden = true; document.querySelector("#password").focus(); }
+function showDashboard() { loginScreen.hidden = true; appContent.hidden = false; }
+
+async function loadDashboard() {
+  const rows = await rest("/rest/v1/dashboard_snapshots?select=payload,created_at&order=created_at.desc&limit=1");
+  if (!rows.length) throw new Error("No snapshot is available yet.");
+  renderDashboard(rows[0].payload, rows[0].created_at);
+}
+
+async function requestUpdate() {
+  const button = document.querySelector("#update-button");
+  button.disabled = true; refreshState.textContent = "Requesting update…";
+  try {
+    const result = await rest("/rest/v1/rpc/request_dashboard_refresh", "POST", {});
+    const request = Array.isArray(result) ? result[0] : result;
+    refreshState.textContent = request.status === "queued" ? "Update queued" : "Update already running";
+    watchRequest(request.id);
+  } catch { refreshState.textContent = "Could not request update"; button.disabled = false; }
+}
+
+function watchRequest(id) {
+  clearInterval(requestPoller);
+  requestPoller = setInterval(async () => {
+    try {
+      const rows = await rest(`/rest/v1/refresh_requests?id=eq.${id}&select=status,message,finished_at`);
+      const request = rows[0];
+      if (!request) return;
+      refreshState.textContent = request.status === "running" ? "Updating source metrics…" : request.status;
+      if (["completed", "skipped", "failed"].includes(request.status)) {
+        clearInterval(requestPoller); document.querySelector("#update-button").disabled = false;
+        if (request.status === "completed") { await loadDashboard(); refreshState.textContent = "Updated just now"; }
+        if (request.status === "failed") refreshState.textContent = "Update failed — check worker";
+      }
+    } catch { /* retain the last visible status and retry */ }
+  }, 10000);
+}
+
+function renderDashboard(data, createdAt) {
+  dashboard.replaceChildren(); engagementFooter.querySelectorAll(".section").forEach((node) => node.remove());
+  document.querySelector("#snapshot-date").textContent = `Updated: ${new Date(createdAt).toLocaleString("en-GB")}`;
   const analyses = data.sections.flatMap((section) => section.metrics.map(analyseMetric));
   renderAttentionSummary(analyses);
   data.sections.forEach((section) => {
     const destination = section.placement === "footer" ? engagementFooter : dashboard;
-    const sectionElement = document.createElement("section");
-    sectionElement.className = "section";
+    const sectionElement = document.createElement("section"); sectionElement.className = "section";
     sectionElement.innerHTML = `<h2 class="section__title">${section.title}</h2><p class="section__description">${section.description}</p>`;
-    const grid = document.createElement("div");
-    grid.className = "card-grid";
+    const grid = document.createElement("div"); grid.className = "card-grid";
     section.metrics.forEach((metric) => grid.append(createMetricCard(metric, analyses.find((analysis) => analysis.metric === metric))));
-    sectionElement.append(grid);
-    destination.append(sectionElement);
+    sectionElement.append(grid); destination.append(sectionElement);
   });
 }
 
 function createMetricCard(metric, analysis) {
-  const fragment = template.content.cloneNode(true);
-  const card = fragment.querySelector(".metric-card");
-  const latest = metric.history.at(-1);
-  const badge = fragment.querySelector(".trend-badge");
-  const value = fragment.querySelector(".metric-value");
-
+  const fragment = template.content.cloneNode(true); const card = fragment.querySelector(".metric-card");
+  const latest = metric.history.at(-1) || { label: "No data", value: "No data" };
   card.id = metricId(metric.name);
-  if (analysis.severity) {
-    card.dataset.severity = analysis.severity;
-    const attentionBadge = fragment.querySelector(".attention-badge");
-    attentionBadge.hidden = false;
-    attentionBadge.dataset.severity = analysis.severity;
-    attentionBadge.textContent = analysis.severity;
-  }
+  if (analysis.severity) { card.dataset.severity = analysis.severity; const badge = fragment.querySelector(".attention-badge"); badge.hidden = false; badge.dataset.severity = analysis.severity; badge.textContent = analysis.severity; }
   fragment.querySelector("h3").textContent = metric.name;
-  badge.textContent = metric.trend.label;
-  badge.dataset.trend = metric.trend.kind;
-  value.textContent = latest.value;
-  value.classList.toggle("is-pending", latest.status === "pending");
-  fragment.querySelector(".metric-period").textContent = latest.label;
-  fragment.querySelector(".metric-target").textContent = metric.target ? `Target: ${metric.target}` : "";
-
-  const chartHost = fragment.querySelector(".sparkline");
-  const numericPoints = metric.history.filter((point) => Number.isFinite(point.numeric));
-  if (numericPoints.length > 1) chartHost.append(drawSparkline(numericPoints, metric.trend.kind));
-
-  const history = fragment.querySelector(".history ul");
-  metric.history.slice().reverse().forEach((point) => {
-    const item = document.createElement("li");
-    item.textContent = `${point.label}: ${point.value}`;
-    history.append(item);
-  });
+  const trend = fragment.querySelector(".trend-badge"); trend.textContent = metric.trend.label; trend.dataset.trend = metric.trend.kind;
+  const value = fragment.querySelector(".metric-value"); value.textContent = latest.value; value.classList.toggle("is-pending", latest.status === "pending");
+  fragment.querySelector(".metric-period").textContent = latest.label; fragment.querySelector(".metric-target").textContent = metric.target ? `Target: ${metric.target}` : "";
+  const numeric = metric.history.filter((point) => Number.isFinite(point.numeric)); if (numeric.length > 1) fragment.querySelector(".sparkline").append(drawSparkline(numeric, metric.trend.kind));
+  metric.history.slice().reverse().forEach((point) => { const item = document.createElement("li"); item.textContent = `${point.label}: ${point.value}`; fragment.querySelector(".history ul").append(item); });
   return card;
 }
 
 function analyseMetric(metric) {
-  const rule = alertRules[metric.name];
-  if (!rule) return { metric, severity: null };
-  const completed = metric.history.filter((point) => Number.isFinite(point.numeric) && !point.partial);
-  if (completed.length < 4) return { metric, severity: null, reason: "insufficient_history" };
-
-  const latest = completed.at(-1);
-  const baselinePoints = completed.slice(-4, -1);
-  const baseline = median(baselinePoints.map((point) => point.numeric));
-  const absoluteChange = Math.abs(latest.numeric - baseline);
-  const adverseChange = rule.direction === "higher"
-    ? (latest.numeric - baseline) / baseline
-    : (baseline - latest.numeric) / baseline;
-  const severity = adverseChange >= rule.critical && absoluteChange >= rule.minimum
-    ? "critical"
-    : adverseChange >= rule.warning && absoluteChange >= rule.minimum
-      ? "warning"
-      : null;
-
-  return { metric, severity, latest, baselinePoints, adverseChange };
+  const rule = alertRules[metric.name]; const completed = metric.history.filter((point) => Number.isFinite(point.numeric) && !point.partial);
+  if (!rule || completed.length < 4) return { metric, severity: null };
+  const latest = completed.at(-1); const baselinePoints = completed.slice(-4, -1); const baseline = median(baselinePoints.map((point) => point.numeric));
+  const adverse = rule[0] === "higher" ? (latest.numeric - baseline) / baseline : (baseline - latest.numeric) / baseline;
+  const severity = adverse >= rule[2] && Math.abs(latest.numeric - baseline) >= rule[3] ? "critical" : adverse >= rule[1] && Math.abs(latest.numeric - baseline) >= rule[3] ? "warning" : null;
+  return { metric, severity, latest, baselinePoints, adverseChange: adverse };
 }
 
 function renderAttentionSummary(analyses) {
-  const flagged = analyses.filter((analysis) => analysis.severity).sort((left, right) => right.adverseChange - left.adverseChange);
-  if (!flagged.length) {
-    attentionSummary.innerHTML = `<div class="attention-summary__panel" data-state="clear"><div class="attention-summary__header"><h2>No unusual movement detected</h2><p>Based on the latest completed snapshots.</p></div></div>`;
-    return;
-  }
-
-  const items = flagged.map((analysis) => {
-    const direction = alertRules[analysis.metric.name].direction === "higher" ? "increase" : "drop";
-    const comparedMonths = analysis.baselinePoints.map((point) => point.label).join("–");
-    return `<li><a href="#${metricId(analysis.metric.name)}"><span><strong>${analysis.metric.name} · ${analysis.latest.value}</strong><span>${capitalize(analysis.severity)} ${direction}: +${Math.round(analysis.adverseChange * 100)}% vs. ${comparedMonths} median</span></span><b class="severity-label" data-severity="${analysis.severity}">${analysis.severity}</b></a></li>`;
-  }).join("");
+  const flagged = analyses.filter((item) => item.severity).sort((a, b) => b.adverseChange - a.adverseChange);
+  if (!flagged.length) { attentionSummary.innerHTML = `<div class="attention-summary__panel" data-state="clear"><div class="attention-summary__header"><h2>No unusual movement detected</h2><p>Based on the latest completed snapshots.</p></div></div>`; return; }
+  const items = flagged.map((item) => { const direction = alertRules[item.metric.name][0] === "higher" ? "increase" : "drop"; return `<li><a href="#${metricId(item.metric.name)}"><span><strong>${item.metric.name} · ${item.latest.value}</strong><span>${capitalize(item.severity)} ${direction}: +${Math.round(item.adverseChange * 100)}% vs. ${item.baselinePoints.map((p) => p.label).join("–")} median</span></span><b class="severity-label" data-severity="${item.severity}">${item.severity}</b></a></li>`; }).join("");
   attentionSummary.innerHTML = `<div class="attention-summary__panel"><div class="attention-summary__header"><h2>Needs attention · ${flagged.length}</h2><p>Latest completed snapshots only.</p></div><ul class="attention-list">${items}</ul></div>`;
 }
 
-function median(values) {
-  const sorted = values.slice().sort((left, right) => left - right);
-  return sorted[Math.floor(sorted.length / 2)];
+async function rest(path, method = "GET", body) {
+  await refreshSessionIfNeeded();
+  const response = await fetch(`${config.supabaseUrl}${path}`, { method, headers: { apikey: config.publishableKey, Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" }, ...(body ? { body: JSON.stringify(body) } : {}) });
+  if (!response.ok) throw new Error(await response.text()); return response.status === 204 ? [] : response.json();
 }
-
-function metricId(name) {
-  return `metric-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}`;
-}
-
-function capitalize(text) {
-  return `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
-}
-
-function drawSparkline(points, trend) {
-  const width = 220;
-  const height = 42;
-  const values = points.map((point) => point.numeric);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min || 1;
-  const color = trend === "watch" ? "#bb3d3d" : trend === "down" ? "#b76b00" : "#0a8378";
-  const coordinates = values.map((value, index) => {
-    const x = (index / (values.length - 1)) * width;
-    const y = height - 4 - ((value - min) / range) * (height - 10);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  });
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-  svg.innerHTML = `<path d="M0 ${height - 3} H${width}" stroke="#e5eaed" stroke-width="1"/><polyline points="${coordinates.join(" ")}" fill="none" stroke="${color}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/>`;
-  return svg;
-}
+async function refreshSessionIfNeeded() { if (Date.now() < session.expires_at - 60000) return; const fresh = await authRequest("/auth/v1/token?grant_type=refresh_token", { refresh_token: session.refresh_token }); session = { ...fresh, expires_at: Date.now() + fresh.expires_in * 1000 }; localStorage.setItem(sessionKey, JSON.stringify(session)); }
+async function authRequest(path, body) { const response = await fetch(`${config.supabaseUrl}${path}`, { method: "POST", headers: { apikey: config.publishableKey, "Content-Type": "application/json" }, body: JSON.stringify(body) }); if (!response.ok) throw new Error(await response.text()); return response.json(); }
+function loadSession() { try { return JSON.parse(localStorage.getItem(sessionKey)); } catch { return null; } }
+function median(values) { const sorted = values.slice().sort((a, b) => a - b); return sorted[Math.floor(sorted.length / 2)]; }
+function metricId(name) { return `metric-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}`; }
+function capitalize(value) { return `${value[0].toUpperCase()}${value.slice(1)}`; }
+function drawSparkline(points, trend) { const width = 220, height = 42, values = points.map((p) => p.numeric), min = Math.min(...values), max = Math.max(...values), range = max - min || 1, color = trend === "watch" ? "#bb3d3d" : trend === "down" ? "#b76b00" : "#0a8378"; const line = values.map((v, i) => `${(i / (values.length - 1) * width).toFixed(1)},${(height - 4 - (v - min) / range * (height - 10)).toFixed(1)}`).join(" "); const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg"); svg.setAttribute("viewBox", `0 0 ${width} ${height}`); svg.innerHTML = `<path d="M0 ${height - 3} H${width}" stroke="#e5eaed"/><polyline points="${line}" fill="none" stroke="${color}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/>`; return svg; }

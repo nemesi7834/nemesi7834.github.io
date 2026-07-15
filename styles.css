@@ -21,6 +21,16 @@ body {
 }
 
 .page-shell { width: min(1200px, calc(100% - 32px)); margin: 0 auto; padding: 64px 0 80px; }
+.login-screen { width: min(520px, 100%); margin: 12vh auto; }
+.login-form { display: grid; gap: 10px; margin-top: 28px; }
+.login-form label { color: var(--ink); font-size: .9rem; font-weight: 750; }
+.login-form input { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 13px; font: inherit; }
+button { border: 0; border-radius: 10px; background: var(--navy); color: white; cursor: pointer; font: inherit; font-weight: 750; padding: 11px 15px; }
+button:hover { background: #0b3041; } button:disabled { cursor: wait; opacity: .65; }
+.form-message { min-height: 20px; margin: 0; color: var(--red); font-size: .85rem; }
+.dashboard-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.button-secondary { border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.button-secondary:hover { background: #eef3f5; }
 
 .hero { max-width: 780px; }
 .eyebrow { margin: 0 0 10px; color: var(--teal); font-size: .8rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }

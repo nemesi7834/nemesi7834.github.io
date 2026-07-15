@@ -9,13 +9,30 @@
   </head>
   <body>
     <main class="page-shell">
+      <section id="login-screen" class="login-screen" aria-labelledby="login-title">
+        <p class="eyebrow">Product Day</p>
+        <h1 id="login-title">SX Operations metrics</h1>
+        <p class="intro">Enter your dashboard password to view the latest protected snapshot.</p>
+        <form id="login-form" class="login-form">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required />
+          <button type="submit">Open dashboard</button>
+          <p id="login-error" class="form-message" role="alert"></p>
+        </form>
+      </section>
+
+      <div id="app-content" hidden>
       <header class="hero">
         <p class="eyebrow">Product Day</p>
         <h1>SX Operations metrics</h1>
         <p class="intro">A public snapshot of product health across support, fulfilment, bookings, stock availability and promotions.</p>
         <div class="meta-row" aria-label="Dashboard metadata">
           <span id="snapshot-date" class="meta-pill">Loading snapshot…</span>
-          <span class="meta-pill">Static baseline</span>
+          <span id="refresh-state" class="meta-pill">Protected snapshot</span>
+        </div>
+        <div class="dashboard-actions">
+          <button id="update-button" type="button">Update</button>
+          <button id="sign-out-button" class="button-secondary" type="button">Sign out</button>
         </div>
       </header>
 
@@ -28,6 +45,7 @@
           <p>Some July engagement metrics are marked <strong>Waiting for data transfer</strong>. Their latest confirmed historical values remain visible.</p>
         </section>
       </footer>
+      </div>
     </main>
 
     <template id="metric-card-template">
@@ -50,6 +68,7 @@
       </article>
     </template>
 
-    <script src="app.js" defer></script>
+    <script src="config.js"></script>
+    <script type="module" src="app.js"></script>
   </body>
 </html>
